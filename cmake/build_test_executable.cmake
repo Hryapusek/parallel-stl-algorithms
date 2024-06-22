@@ -9,7 +9,7 @@ set(TEST_EXECUTABLE_SOURCES
     ${SOURCE_FILES}
 )
 set(TEST_EXECUTABLE_INCLUDES_PUBLIC
-    include/public/
+    ${COMMON_PUBLIC_INCLUDES}
 )
 
 add_executable(${test_target} ${SOURCE_FILES})
