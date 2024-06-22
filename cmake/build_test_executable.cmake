@@ -20,6 +20,7 @@ target_sources(${test_target}
 
 target_include_directories(${test_target}
     PUBLIC ${TEST_EXECUTABLE_INCLUDES_PUBLIC}
+    PRIVATE ${COMMON_PRIVATE_INCLUDES}
 )
 
 target_link_libraries(${test_target} gtest gtest_main)
