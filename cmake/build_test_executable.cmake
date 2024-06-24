@@ -16,6 +16,8 @@ add_executable(${test_target} ${SOURCE_FILES})
 
 target_sources(${test_target}
     PRIVATE ${TEST_EXECUTABLE_SOURCES}
+        gtest/src/s0_utils_test.cpp
+        gtest/src/s0_omp_parallel_algorithms_test.cpp
     )
 
 target_include_directories(${test_target}
@@ -26,3 +28,5 @@ target_include_directories(${test_target}
 target_link_libraries(${test_target} gtest gtest_main)
 
 target_compile_features(${test_target} PUBLIC cxx_std_20)
+
+target_compile_definitions(${test_target} PRIVATE S0M4BODY_COMPILE_WITH_GTEST)
