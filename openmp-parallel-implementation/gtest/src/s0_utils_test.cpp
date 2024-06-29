@@ -3,7 +3,7 @@
 #include <ranges>
 #include <vector>
 
-#include "s0_utils.hpp"
+#include "CommonUtils/s0_utils.hpp"
 
 TEST(generateRanges, defaultValue)
 {

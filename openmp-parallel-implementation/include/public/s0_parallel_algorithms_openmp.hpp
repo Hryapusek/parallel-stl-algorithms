@@ -5,8 +5,8 @@
 #include <vector>
 #include <omp.h>
 
-#include "s0_type_traits.hpp"
-#include "s0_utils.hpp"
+#include "CommonUtils/s0_type_traits.hpp"
+#include "CommonUtils/s0_utils.hpp"
 
 namespace s0m4b0dY
 {
