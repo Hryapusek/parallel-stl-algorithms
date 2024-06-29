@@ -1,0 +1,9 @@
+[submodule "zmq-parallel-implementation"]
+	path = zmq-parallel-implementation
+	url = git@github.com:Hryapusek/zmq-parallel-implementation.git
+[submodule "openmp-parallel-implementation"]
+	path = openmp-parallel-implementation
+	url = git@github.com:Hryapusek/openmp-parallel-implementation.git
+[submodule "threading-parallel-implementation"]
+	path = threading-parallel-implementation
+	url = git@github.com:Hryapusek/threading-parallel-implementation.git
