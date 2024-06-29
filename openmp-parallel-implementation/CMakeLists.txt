@@ -11,7 +11,7 @@ endif()
 
 set(GTEST_EXECUTABLE ON CACHE BOOL "Build gtest executable?")
 
-set(main_lib "s0m4b0dY_parallel_algorithms")
+set(main_lib "s0m4b0dY_parallel_algorithms_openmp")
 
 set(SOURCE_FILES
 )
