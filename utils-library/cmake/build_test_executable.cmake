@@ -1,4 +1,4 @@
-set(test_target "s0m4b0dY_parallel_algorithms_binary_test")
+set(test_target "s0m4b0dY_utils_library_test")
 
 include(cmake/install_gtest.cmake)
 
@@ -16,7 +16,7 @@ add_executable(${test_target} ${COMMON_SOURCE_FILES})
 
 target_sources(${test_target}
     PRIVATE ${TEST_EXECUTABLE_SOURCES}
-        gtest/src/s0_omp_parallel_algorithms_test.cpp
+        gtest/src/s0_utils_test.cpp
     )
 
 target_include_directories(${test_target}

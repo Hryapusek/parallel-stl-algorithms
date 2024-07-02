@@ -21,7 +21,7 @@ namespace s0m4b0dY
   inline _helpers::IteratorValueType<Iterator_t>::value_type OpenMPI::reduce(Iterator_t begin, Iterator_t end)
   {
     using value_type = _helpers::IteratorValueType<Iterator_t>::value_type;
-    const auto init_value = 0;
+    const value_type init_value = 0;
     std::vector<std::pair<Iterator_t, Iterator_t>> ranges = generateRanges(begin, end, omp_get_max_threads());
     std::vector<value_type> results(ranges.size(), init_value);
     #pragma omp parallel for
