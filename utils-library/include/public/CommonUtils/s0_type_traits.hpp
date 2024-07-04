@@ -12,6 +12,11 @@ namespace _helpers
         { std::declval<Iterator_t::value_type>() + std::declval<Iterator_t::value_type>() };
     };
 
+    template <class UnaryFunction, class ValueType>
+    concept Predicate = requires(UnaryFunction function, ValueType value) {
+        { function(value) } -> std::convertible_to<bool>;
+    };
+
     template <typename T>
     struct is_dereferenceable
     {
