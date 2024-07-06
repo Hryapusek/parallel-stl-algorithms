@@ -24,7 +24,7 @@ target_include_directories(${test_target}
     PRIVATE ${COMMON_PRIVATE_INCLUDES}
 )
 
-target_link_libraries(${test_target} gtest gtest_main ${COMMON_LIBS})
+target_link_libraries(${test_target} gtest gtest_main gmock gmock_main ${COMMON_LIBS})
 
 target_compile_features(${test_target} PUBLIC cxx_std_20)
 
