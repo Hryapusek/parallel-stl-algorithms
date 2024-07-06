@@ -2,6 +2,7 @@
 #define S0M4B0DY_TYPE_TRAITS_HPP
 
 #include <type_traits>
+#include <concepts>
 
 namespace _helpers
 {
