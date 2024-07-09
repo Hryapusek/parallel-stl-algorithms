@@ -77,6 +77,9 @@ namespace _helpers
     {
         using value_type = decltype(*std::declval<Iterator_t>());
     };
+
+    template < class Iterator_t >
+    using IteratorValueType_t = IteratorValueType<Iterator_t>::value_type;
 }
 
 #endif
