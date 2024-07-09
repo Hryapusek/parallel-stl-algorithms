@@ -140,3 +140,16 @@ TEST(transformSecondOverloadNonBackInserter, plus)
     auto result = std::equal(outputArr.begin(), outputArr.end(), outputArr.begin(), outputArr.end());
     ASSERT_TRUE(result);
 }
+
+TEST(bitonicSort, 500_0_range)
+{
+    std::vector<int> arr;
+    for (auto i = 0; i < 512; i++)
+    {
+        arr.push_back(i);
+    }
+    std::reverse(arr.begin(), arr.end());
+    s0m4b0dY::OpenMPI openMPI;
+    openMPI.bitonic_sort(arr.begin(), arr.end());
+    ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
+}

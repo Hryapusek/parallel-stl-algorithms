@@ -6,6 +6,8 @@
 #include <optional>
 #include <atomic>
 #include <omp.h>
+#include <unordered_map>
+#include <execution>
 
 #include "CommonUtils/s0_type_traits.hpp"
 #include "CommonUtils/s0_utils.hpp"
@@ -84,6 +86,16 @@ namespace s0m4b0dY
                                       >
               >
     void transform_non_back_inserter(InputIterator1_t begin1, InputIterator1_t end1, InputIterator2_t begin2, OutputIterator_t output, BinaryFunction &&binaryFunction);
+  
+    template < std::forward_iterator InputIterator_t, class HashFunction = std::hash<::_helpers::IteratorValueType_t<InputIterator_t>>, class Comparator = std::less<::_helpers::IteratorValueType_t<InputIterator_t>>>
+    void bitonic_sort(InputIterator_t begin, InputIterator_t end, HashFunction hashFunction = HashFunction(), Comparator comparator = Comparator());
+
+  private:
+    template < class Hash_t, class Value_t, class Comparator >
+    void bitonic_merge(std::vector<Hash_t> &hashValues, std::unordered_map<Hash_t, Value_t *> &hashTable, std::vector<Hash_t>::size_type low, std::vector<Hash_t>::size_type cnt, Comparator comparator);
+
+    template < std::forward_iterator InputIterator_t, class Hash_t, class Value_t, class HashFunction, class Comparator >
+    std::pair< std::vector< Hash_t >, std::unordered_map< Hash_t, Value_t * > > hash_iterators_in_bitonic_way(InputIterator_t begin, InputIterator_t end, HashFunction hashFunction, Comparator comparator);
   };
 
   template <_helpers::AddableIterator Iterator_t>
@@ -371,6 +383,106 @@ namespace s0m4b0dY
     {
       throw;
     }
+  }
+
+  template<std::forward_iterator InputIterator_t, class HashFunction, class Comparator>
+  inline void OpenMPI::bitonic_sort(InputIterator_t begin, InputIterator_t end, HashFunction hashFunction, Comparator comparator)
+  {
+    using value_type = ::_helpers::IteratorValueType_t<InputIterator_t>;
+    using hash_t = std::invoke_result_t<HashFunction, value_type>;
+
+    auto [hashValues, hashTable] = hash_iterators_in_bitonic_way< InputIterator_t, hash_t, value_type >(begin, end, hashFunction, comparator);
+
+    bitonic_merge(hashValues, hashTable, 0, hashValues.size(), comparator);
+
+    std::unordered_map<hash_t, value_type> popValues;
+
+    for (auto src_it = begin, correctHash = hashValues.begin(); src_it != end; src_it++, correctHash++)
+    {
+      auto hash = hashFunction(*src_it);
+      if (hash == *correctHash)
+      {
+        continue;
+      }
+      popValues.insert({hash, std::move(*src_it)});
+      hashTable.erase(hash);
+      auto foundIt = popValues.find(*correctHash);
+      if (foundIt != popValues.end())
+      {
+        *src_it = std::move(foundIt->second);
+        popValues.erase(foundIt);
+      }
+      else
+      {
+        *src_it = std::move(*hashTable[*correctHash]);
+        hashTable.erase(*correctHash);
+      }
+    }
+  }
+
+  template<class Hash_t, class Value_t, class Comparator>
+  inline void OpenMPI::bitonic_merge(std::vector<Hash_t>& hashValues, 
+                                     std::unordered_map<Hash_t, Value_t *>& hashTable, 
+                                     std::vector<Hash_t>::size_type low, 
+                                     std::vector<Hash_t>::size_type cnt,
+                                     Comparator comparator)
+  {
+    if (cnt <= 1)
+      return;
+    auto k = cnt / 2;
+    /// @return true if swap was performed. false otherwise
+    auto inplaceComparator = [&comparator, &hashTable](auto &lhs, auto &rhs) -> bool
+    {
+      if (comparator(*hashTable[lhs], *hashTable[rhs]))
+      {
+        return false;
+      }
+      else
+      {
+        std::swap(lhs, rhs);
+        return true;
+      }
+    };
+    #pragma omp parallel for
+    for (auto i = low; i < low + k; i++)
+    {
+      inplaceComparator(hashValues[i], hashValues[i + k]);
+    }
+    bitonic_merge(hashValues, hashTable, low, k, comparator);
+    bitonic_merge(hashValues, hashTable, low + k, k, comparator);
+  }
+
+  template<std::forward_iterator InputIterator_t, class Hash_t, class Value_t, class HashFunction, class Comparator>
+  inline std::pair<std::vector<Hash_t>,std::unordered_map<Hash_t,Value_t *>> OpenMPI::hash_iterators_in_bitonic_way(InputIterator_t begin, InputIterator_t end, HashFunction hashFunction, Comparator comparator)
+  {
+    auto length = std::distance(begin, end);
+    assert(("Array length must be a power of 2", ((length - 1) & length) == 0));
+
+    std::unordered_map<Hash_t, Value_t *> hashTable;
+    std::vector<Hash_t> hashedValues;
+
+    for (auto it = begin; it != end; it++)
+    {
+      auto hash = hashFunction(*it);
+      hashTable.insert({hash, &*it});
+      hashedValues.push_back(hash);
+    }
+
+    // Sort first half in ascending order
+    std::sort(std::execution::par_unseq, hashedValues.begin(), hashedValues.begin() + length, 
+    [&hashTable, &comparator](Hash_t lhs, Hash_t rhs)
+    {
+      return comparator(*hashTable[lhs], *hashTable[rhs]);
+    });
+
+    // Sort second half in descending order
+    std::sort(std::execution::par_unseq, hashedValues.begin() + length, hashedValues.end(), 
+    [&hashTable, &comparator](Hash_t lhs, Hash_t rhs)
+    {
+      return not comparator(*hashTable[lhs], *hashTable[rhs]);
+    });
+
+    return {hashedValues, hashTable};
   }
 
 } // namespace s0m4b0dY
