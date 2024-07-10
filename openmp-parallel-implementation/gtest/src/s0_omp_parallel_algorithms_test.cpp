@@ -153,3 +153,16 @@ TEST(bitonicSort, 500_0_range)
     openMPI.bitonic_sort(arr.begin(), arr.end());
     ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
+
+TEST(oddEvenSort, 500_0_range)
+{
+    std::vector<int> arr;
+    for (auto i = 0; i < 511; i++)
+    {
+        arr.push_back(i);
+    }
+    std::reverse(arr.begin(), arr.end());
+    s0m4b0dY::OpenMPI openMPI;
+    openMPI.odd_even_sort(arr.begin(), arr.end());
+    ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
+}

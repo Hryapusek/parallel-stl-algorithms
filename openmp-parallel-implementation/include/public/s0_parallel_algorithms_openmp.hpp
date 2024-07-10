@@ -90,6 +90,9 @@ namespace s0m4b0dY
     template < std::forward_iterator InputIterator_t, class HashFunction = std::hash<::_helpers::IteratorValueType_t<InputIterator_t>>, class Comparator = std::less<::_helpers::IteratorValueType_t<InputIterator_t>>>
     void bitonic_sort(InputIterator_t begin, InputIterator_t end, HashFunction hashFunction = HashFunction(), Comparator comparator = Comparator());
 
+    template < std::forward_iterator InputIterator_t, class HashFunction = std::hash<::_helpers::IteratorValueType_t<InputIterator_t>>, class Comparator = std::less<::_helpers::IteratorValueType_t<InputIterator_t>>>
+    void odd_even_sort(InputIterator_t begin, InputIterator_t end, HashFunction hashFunction = HashFunction(), Comparator comparator = Comparator());
+
   private:
     template < class Hash_t, class Value_t, class Comparator >
     void bitonic_merge(std::vector<Hash_t> &hashValues, std::unordered_map<Hash_t, Value_t *> &hashTable, std::vector<Hash_t>::size_type low, std::vector<Hash_t>::size_type cnt, Comparator comparator);
@@ -409,6 +412,42 @@ namespace s0m4b0dY
 
     bitonic_merge(hashValues, hashTable, 0, hashValues.size(), comparator);
 
+    placeElementsInCorrectPositions(begin, end, hashFunction, hashValues, hashTable);
+  }
+
+  template <std::forward_iterator InputIterator_t, class HashFunction, class Comparator>
+  inline void OpenMPI::odd_even_sort(InputIterator_t begin, InputIterator_t end,
+                                     HashFunction hashFunction,
+                                     Comparator comparator)
+  {
+    using value_type = ::_helpers::IteratorValueType_t<InputIterator_t>;
+    using hash_t = std::invoke_result_t<HashFunction, value_type>;
+
+    if (begin == end)
+      return;
+
+    auto [hashValues, hashTable] = hash_sequence< InputIterator_t, hash_t, value_type >(begin, end, hashFunction, comparator);
+
+    using size_type = decltype(hashValues.size());
+    size_type swapCount = 0;
+    auto inplaceComparator = createInplaceComparator(comparator, hashTable);
+    do
+    {
+      swapCount = 0;
+
+      #pragma parallel for
+      for (size_type i = 1; i < hashValues.size(); i += 2)
+      {
+        swapCount += static_cast<size_type>(inplaceComparator(hashValues[i-1], hashValues[i]));
+      }
+
+      #pragma parallel for
+      for (size_type i = 2; i < hashValues.size(); i += 2)
+      {
+        swapCount += static_cast<size_type>(inplaceComparator(hashValues[i-1], hashValues[i]));
+      }
+    } while (swapCount > 0);
+    
     placeElementsInCorrectPositions(begin, end, hashFunction, hashValues, hashTable);
   }
 
