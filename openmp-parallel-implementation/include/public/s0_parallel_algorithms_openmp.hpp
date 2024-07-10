@@ -95,7 +95,7 @@ namespace s0m4b0dY
 
   private:
     template < class Hash_t, class Value_t, class Comparator >
-    void bitonic_merge(std::vector<Hash_t> &hashValues, std::unordered_map<Hash_t, Value_t *> &hashTable, std::vector<Hash_t>::size_type low, std::vector<Hash_t>::size_type cnt, Comparator comparator);
+    void bitonic_merge(std::vector<Hash_t> &hashValues, std::unordered_multimap<Hash_t, Value_t *> &hashTable, std::vector<Hash_t>::size_type low, std::vector<Hash_t>::size_type cnt, Comparator comparator);
   };
 
   template <_helpers::AddableIterator Iterator_t>
@@ -397,17 +397,17 @@ namespace s0m4b0dY
     auto [hashValues, hashTable] = hash_sequence< InputIterator_t, hash_t, value_type >(begin, end, hashFunction, comparator);
 
     // Sort first half in ascending order
-    std::sort(std::execution::par_unseq, hashValues.begin(), hashValues.begin() + length, 
+    std::sort(std::execution::par_unseq, hashValues.begin(), hashValues.begin() + length / 2,
     [&hashTable, &comparator](hash_t lhs, hash_t rhs)
     {
-      return comparator(*hashTable[lhs], *hashTable[rhs]);
+      return comparator(*hashTable.find(lhs)->second, *hashTable.find(rhs)->second);
     });
 
     // Sort second half in descending order
-    std::sort(std::execution::par_unseq, hashValues.begin() + length, hashValues.end(), 
+    std::sort(std::execution::par_unseq, hashValues.begin() + length / 2, hashValues.end(), 
     [&hashTable, &comparator](hash_t lhs, hash_t rhs)
     {
-      return not comparator(*hashTable[lhs], *hashTable[rhs]);
+      return not comparator(*hashTable.find(lhs)->second, *hashTable.find(rhs)->second);
     });
 
     bitonic_merge(hashValues, hashTable, 0, hashValues.size(), comparator);
@@ -438,13 +438,17 @@ namespace s0m4b0dY
       #pragma parallel for
       for (size_type i = 1; i < hashValues.size(); i += 2)
       {
-        swapCount += static_cast<size_type>(inplaceComparator(hashValues[i-1], hashValues[i]));
+        auto result = static_cast<size_type>(inplaceComparator(hashValues[i-1], hashValues[i]));
+        #pragma omp atomic
+        swapCount += result;
       }
 
       #pragma parallel for
       for (size_type i = 2; i < hashValues.size(); i += 2)
       {
-        swapCount += static_cast<size_type>(inplaceComparator(hashValues[i-1], hashValues[i]));
+        auto result = static_cast<size_type>(inplaceComparator(hashValues[i-1], hashValues[i]));
+        #pragma omp atomic
+        swapCount += result;
       }
     } while (swapCount > 0);
     
@@ -453,7 +457,7 @@ namespace s0m4b0dY
 
   template<class Hash_t, class Value_t, class Comparator>
   inline void OpenMPI::bitonic_merge(std::vector<Hash_t>& hashValues, 
-                                     std::unordered_map<Hash_t, Value_t *>& hashTable, 
+                                     std::unordered_multimap<Hash_t, Value_t *>& hashTable, 
                                      std::vector<Hash_t>::size_type low, 
                                      std::vector<Hash_t>::size_type cnt,
                                      Comparator comparator)
