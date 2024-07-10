@@ -38,4 +38,67 @@ std::vector<std::pair<Iterator_t, Iterator_t>> generateRanges(Iterator_t begin, 
   return ranges;
 }
 
+  /// @return Comparator that returns true if swap was performed. 
+  /// @return False otherwise
+  template < class Comparator, class HashTable >
+  auto createInplaceComparator(Comparator &comparator, HashTable &hashTable)
+  {
+    return [&comparator, &hashTable](auto &lhs, auto &rhs) -> bool
+    {
+      if (comparator(*hashTable[lhs], *hashTable[rhs]))
+      {
+        return false;
+      }
+      else
+      {
+        std::swap(lhs, rhs);
+        return true;
+      }
+    };
+  }
+
+  template<std::forward_iterator InputIterator_t, class Hash_t, class Value_t, class HashFunction, class Comparator>
+  inline std::pair<std::vector<Hash_t>, std::unordered_map<Hash_t,Value_t *>> hash_sequence(InputIterator_t begin, InputIterator_t end, HashFunction hashFunction, Comparator comparator)
+  {
+    std::unordered_map<Hash_t, Value_t *> hashTable;
+    std::vector<Hash_t> hashedValues;
+
+    for (auto it = begin; it != end; it++)
+    {
+      auto hash = hashFunction(*it);
+      hashTable.insert({hash, &*it});
+      hashedValues.push_back(hash);
+    }
+
+    return {hashedValues, hashTable};
+  }
+
+  template< std::forward_iterator InputIterator_t, class HashFunction, class Hash_t, class Value_t >
+  void placeElementsInCorrectPositions(InputIterator_t begin, InputIterator_t end, HashFunction hashFunction, const std::vector<Hash_t> &hashValues, std::unordered_map<Hash_t, Value_t *> &hashTable)
+  {
+    std::unordered_map<Hash_t, Value_t> popValues;
+
+    for (auto src_it = begin, correctHash = hashValues.begin(); src_it != end; src_it++, correctHash++)
+    {
+      auto hash = hashFunction(*src_it);
+      if (hash == *correctHash)
+      {
+        continue;
+      }
+      popValues.insert({hash, std::move(*src_it)});
+      hashTable.erase(hash);
+      auto foundIt = popValues.find(*correctHash);
+      if (foundIt != popValues.end())
+      {
+        *src_it = std::move(foundIt->second);
+        popValues.erase(foundIt);
+      }
+      else
+      {
+        *src_it = std::move(*hashTable[*correctHash]);
+        hashTable.erase(*correctHash);
+      }
+    }
+  }
+
 #endif
