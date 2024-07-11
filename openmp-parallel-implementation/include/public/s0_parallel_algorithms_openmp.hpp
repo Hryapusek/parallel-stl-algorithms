@@ -14,7 +14,7 @@
 
 namespace s0m4b0dY
 {
-  class OpenMPI
+  class OpenMP
   {
     template < class T >
     using IteratorValueType = _helpers::IteratorValueType<T>;
@@ -99,7 +99,7 @@ namespace s0m4b0dY
   };
 
   template <_helpers::AddableIterator Iterator_t>
-  inline _helpers::IteratorValueType<Iterator_t>::value_type OpenMPI::reduce(Iterator_t begin, Iterator_t end)
+  inline _helpers::IteratorValueType<Iterator_t>::value_type OpenMP::reduce(Iterator_t begin, Iterator_t end)
   {
     using value_type = _helpers::IteratorValueType<Iterator_t>::value_type;
     std::vector<std::pair<Iterator_t, Iterator_t>> ranges = generateRanges(begin, end, omp_get_max_threads());
@@ -147,7 +147,7 @@ namespace s0m4b0dY
   }
 
   template<_helpers::AddableIterator Iterator_t>
-  inline _helpers::IteratorValueType<Iterator_t>::value_type OpenMPI::reduce(Iterator_t begin, Iterator_t end, IteratorValueType<Iterator_t>::value_type initValue)
+  inline _helpers::IteratorValueType<Iterator_t>::value_type OpenMP::reduce(Iterator_t begin, Iterator_t end, IteratorValueType<Iterator_t>::value_type initValue)
   {
     using value_type = _helpers::IteratorValueType<Iterator_t>::value_type;
     std::vector<std::pair<Iterator_t, Iterator_t>> ranges = generateRanges(begin, end, omp_get_max_threads());
@@ -184,7 +184,7 @@ namespace s0m4b0dY
   }
 
   template<_helpers::AddableIterator Iterator_t, _helpers::Predicate<typename _helpers::IteratorValueType<Iterator_t>::value_type> Predicate>
-  inline Iterator_t OpenMPI::find_if(Iterator_t begin, Iterator_t end, Predicate && unaryFunction)
+  inline Iterator_t OpenMP::find_if(Iterator_t begin, Iterator_t end, Predicate && unaryFunction)
   {
     using value_type = _helpers::IteratorValueType<Iterator_t>::value_type;
     std::vector<std::pair<Iterator_t, Iterator_t>> ranges = generateRanges(begin, end, omp_get_max_threads());
@@ -225,7 +225,7 @@ namespace s0m4b0dY
   }
 
   template <class Iterator_t, _helpers::Predicate<typename _helpers::IteratorValueType<Iterator_t>::value_type> Predicate>
-  inline long long OpenMPI::count_if(Iterator_t begin, Iterator_t end, Predicate &&unaryFunction)
+  inline long long OpenMP::count_if(Iterator_t begin, Iterator_t end, Predicate &&unaryFunction)
   {
     using Count_t = long long;
     using value_type = _helpers::IteratorValueType<Iterator_t>::value_type;
@@ -255,7 +255,7 @@ namespace s0m4b0dY
   }
 
   template <class InputIterator_t, class OutputIterator_t, class UnaryFunction, class>
-  inline void OpenMPI::transform(InputIterator_t begin, InputIterator_t end, OutputIterator_t output, UnaryFunction &&unaryFunction)
+  inline void OpenMP::transform(InputIterator_t begin, InputIterator_t end, OutputIterator_t output, UnaryFunction &&unaryFunction)
   {
     using InputValue_t = ::_helpers::IteratorValueType<InputIterator_t>::value_type;
     using UnaryFunctionReturn_t = std::invoke_result_t<UnaryFunction, InputValue_t>;
@@ -294,7 +294,7 @@ namespace s0m4b0dY
   }
 
   template <class InputIterator_t, class OutputIterator_t, class UnaryFunction, class>
-  inline void OpenMPI::transform_non_back_inserter(InputIterator_t begin, InputIterator_t end, OutputIterator_t output, UnaryFunction &&unaryFunction)
+  inline void OpenMP::transform_non_back_inserter(InputIterator_t begin, InputIterator_t end, OutputIterator_t output, UnaryFunction &&unaryFunction)
   {
     std::vector<std::pair<InputIterator_t, InputIterator_t>> ranges = generateRanges(begin, end, omp_get_max_threads());
     try
@@ -318,7 +318,7 @@ namespace s0m4b0dY
   }
 
   template <class InputIterator1_t, class InputIterator2_t, class OutputIterator_t, class BinaryFunction, class>
-  inline void OpenMPI::transform(InputIterator1_t begin1, InputIterator1_t end1, InputIterator2_t begin2, OutputIterator_t output, BinaryFunction &&binaryFunction)
+  inline void OpenMP::transform(InputIterator1_t begin1, InputIterator1_t end1, InputIterator2_t begin2, OutputIterator_t output, BinaryFunction &&binaryFunction)
   {
     using InputValue1_t = ::_helpers::IteratorValueType<InputIterator1_t>::value_type;
     using InputValue2_t = ::_helpers::IteratorValueType<InputIterator2_t>::value_type;
@@ -360,7 +360,7 @@ namespace s0m4b0dY
   }
 
   template <class InputIterator1_t, class InputIterator2_t, class OutputIterator_t, class BinaryFunction, class>
-  inline void OpenMPI::transform_non_back_inserter(InputIterator1_t begin1, InputIterator1_t end1, InputIterator2_t begin2, OutputIterator_t output, BinaryFunction &&binaryFunction)
+  inline void OpenMP::transform_non_back_inserter(InputIterator1_t begin1, InputIterator1_t end1, InputIterator2_t begin2, OutputIterator_t output, BinaryFunction &&binaryFunction)
   {
     std::vector<std::pair<InputIterator1_t, InputIterator1_t>> ranges = generateRanges(begin1, end1, omp_get_max_threads());
     try
@@ -386,7 +386,7 @@ namespace s0m4b0dY
   }
 
   template<std::forward_iterator InputIterator_t, class HashFunction, class Comparator>
-  inline void OpenMPI::bitonic_sort(InputIterator_t begin, InputIterator_t end, HashFunction hashFunction, Comparator comparator)
+  inline void OpenMP::bitonic_sort(InputIterator_t begin, InputIterator_t end, HashFunction hashFunction, Comparator comparator)
   {
     using value_type = ::_helpers::IteratorValueType_t<InputIterator_t>;
     using hash_t = std::invoke_result_t<HashFunction, value_type>;
@@ -397,18 +397,22 @@ namespace s0m4b0dY
     auto [hashValues, hashTable] = hash_sequence< InputIterator_t, hash_t, value_type >(begin, end, hashFunction, comparator);
 
     // Sort first half in ascending order
-    std::sort(std::execution::par_unseq, hashValues.begin(), hashValues.begin() + length / 2,
-    [&hashTable, &comparator](hash_t lhs, hash_t rhs)
-    {
-      return comparator(*hashTable.find(lhs)->second, *hashTable.find(rhs)->second);
-    });
+	std::sort(std::execution::par_unseq, hashValues.begin(), hashValues.begin() + (length / 2),
+	          [&hashTable, &comparator](const hash_t& lhs, const hash_t& rhs)
+		{
+			if (lhs == rhs)
+				return false;
+			return comparator(*hashTable.find(lhs)->second, *hashTable.find(rhs)->second);
+		});
 
-    // Sort second half in descending order
-    std::sort(std::execution::par_unseq, hashValues.begin() + length / 2, hashValues.end(), 
-    [&hashTable, &comparator](hash_t lhs, hash_t rhs)
-    {
-      return not comparator(*hashTable.find(lhs)->second, *hashTable.find(rhs)->second);
-    });
+	// Sort second half in descending order
+	std::sort(std::execution::par_unseq, hashValues.begin() + length / 2, hashValues.end(),
+	          [&hashTable, &comparator](hash_t lhs, hash_t rhs)
+		{
+			if (lhs == rhs)
+				return false;
+			return not comparator(*hashTable.find(lhs)->second, *hashTable.find(rhs)->second);
+		});
 
     bitonic_merge(hashValues, hashTable, 0, hashValues.size(), comparator);
 
@@ -416,7 +420,7 @@ namespace s0m4b0dY
   }
 
   template <std::forward_iterator InputIterator_t, class HashFunction, class Comparator>
-  inline void OpenMPI::odd_even_sort(InputIterator_t begin, InputIterator_t end,
+  inline void OpenMP::odd_even_sort(InputIterator_t begin, InputIterator_t end,
                                      HashFunction hashFunction,
                                      Comparator comparator)
   {
@@ -456,7 +460,7 @@ namespace s0m4b0dY
   }
 
   template<class Hash_t, class Value_t, class Comparator>
-  inline void OpenMPI::bitonic_merge(std::vector<Hash_t>& hashValues, 
+  inline void OpenMP::bitonic_merge(std::vector<Hash_t>& hashValues, 
                                      std::unordered_multimap<Hash_t, Value_t *>& hashTable, 
                                      std::vector<Hash_t>::size_type low, 
                                      std::vector<Hash_t>::size_type cnt,

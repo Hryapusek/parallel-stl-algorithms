@@ -45,14 +45,23 @@ auto createInplaceComparator(Comparator &comparator, HashTable &hashTable)
 {
 	return [&comparator, &hashTable](auto &lhs, auto &rhs) -> bool
 		   {
-			   if (comparator(*hashTable.find(lhs)->second, *hashTable.find(rhs)->second))
+            auto leftIt = hashTable.find(lhs)->second;
+            auto rightIt = hashTable.find(rhs)->second;
+			   if (comparator(*leftIt, *rightIt))
 			   {
 				   return false;
 			   }
 			   else
 			   {
+                if (comparator(*rightIt, *leftIt))
+                {
 				   std::swap(lhs, rhs);
 				   return true;
+                }
+                else
+                {
+                    return false;
+                }
 			   }
 		   };
 }
@@ -68,9 +77,13 @@ inline std::pair<std::vector<Hash_t>, std::unordered_multimap<Hash_t, Value_t *>
 		auto hash = hashFunction(*it);
 		hashTable.insert({hash, &*it});
 		hashedValues.push_back(hash);
+        if (hash > 100000000ull)
+        {
+            std::cout << "sus";
+        }
 	}
 
-	return {hashedValues, hashTable};
+	return {std::move(hashedValues), std::move(hashTable)};
 }
 
 template< std::forward_iterator InputIterator_t, class HashFunction, class Hash_t, class Value_t >
